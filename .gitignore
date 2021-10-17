@@ -1,4 +1,5 @@
 ﻿twpyenv
 secrets.py
 __pycache__
-*.txt
+ancient_archive.txt
+recent_archive.txt

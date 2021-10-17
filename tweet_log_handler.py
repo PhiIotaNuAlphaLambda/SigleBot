@@ -22,13 +22,9 @@ def delete_already_tweeted(new_tweets):
 
   try:
     f = open("recent_archive.txt", "rb")
-    print("file opened")
     recent_tweets = Unpickler(f).load()
-    print("recent_tweets loaded")
-    print(recent_tweets)
     f.close()
   except:
-    print("file open failed")
     return new_tweets
   
   not_duplicate_tweets = []
@@ -49,10 +45,7 @@ def archive_old_retweets():
     file = open("recent_archive.txt", "rb")
     recent_archive = Unpickler(file).load()
     file.close()
-    print("Archive Ancient: Loaded recent_archive.txt")
-    print(recent_archive)
   except:
-    print("Archive Ancient: Failed to open recent_archive.txt")
     return
 
   new_recent_archive = []

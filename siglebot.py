@@ -32,7 +32,6 @@ def retweet_sigle_posts(wait_time_minutes):
     try:
       tweet.entities["urls"] = verify_valid_url(tweet.entities["urls"])
     except Exception as e:
-      print(e)
       continue
 
     new_tweets.append(
