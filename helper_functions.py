@@ -12,7 +12,7 @@ def find_sigle_url(arr):
   """
   Identifies and returns Sigle-formatted blog post URL.
   """
-  blog_url_re = r"https://app.sigle.io/[a-zA-z0-9.]+/[a-zA-z0-9_-]+"
+  blog_url_re = r"https://app.sigle.io/[a-zA-z0-9._]+/[a-zA-z0-9_-]+"
   for url_obj in arr:
     match = re.search(blog_url_re, url_obj['expanded_url'])
     if match:
