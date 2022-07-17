@@ -92,14 +92,15 @@ def log_retweeted_tweet(tweet):
   pass
 
 def send_retweets(cleaned_tweets_list, tweepy_client):
+  successfully_retweeted_urls = []
   for tweet in cleaned_tweets_list:
     try:
       tweepy_client.retweet(tweet.tweet_id)
-     # log_retweeted_tweet.add_to_recent_archive(tweet)
+      successfully_retweeted_urls.append(tweet.entities["urls"][0]['expanded_url'])
       print(f"Retweeted & Archived Tweet ID {tweet.tweet_id} with link to {tweet.post_url}")
     except:
       continue
-
+  return successfully_retweeted_urls
 
 def activate_siglebot():
   """
