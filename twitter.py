@@ -1,6 +1,8 @@
 from decouple import config
 import tweepy
 import re
+from app import RetweetedTweet, db
+from datetime import datetime
 
 class NewTweet:
   
@@ -83,24 +85,38 @@ def deduplicate_tweets(new_tweets_list):
   """
   Compares list up tweets against recently tweeted links stored in database, removing them from the list of tweets that are to be retweeted.
   """
-  pass
+  db_tweet_ids = []
+  db_tweets = RetweetedTweet.query.all()
+  for db_tweet in db_tweets:
+    db_tweet_ids.append(db_tweet.tweet_id)
+  deduplicated_tweets = []
+  for tweet in new_tweets_list:
+    if tweet.id not in db_tweet_ids:
+      deduplicated_tweets.append(tweet)
+  return deduplicated_tweets
 
-def log_retweeted_tweet(tweet):
+def log_retweeted_urls(successfully_retweeted_ids):
   """
   Record tweet into the DB to ensure it doesn't get tweeted again anytime soon.
   """
-  pass
+  for tweet_id in successfully_retweeted_ids:
+    adding_tweet = RetweetedTweet(tweet_id=tweet_id, date_retweeted=datetime.now())
+    db.session.add(adding_tweet)
+    db.session.commit()
+  
+  return True
 
 def send_retweets(cleaned_tweets_list, tweepy_client):
-  successfully_retweeted_urls = []
+  successfully_retweeted_ids = []
   for tweet in cleaned_tweets_list:
     try:
-      tweepy_client.retweet(tweet.tweet_id)
-      successfully_retweeted_urls.append(tweet.entities["urls"][0]['expanded_url'])
+      if config('DEBUG', cast=bool) is not True:
+        tweepy_client.retweet(tweet.tweet_id)
+      successfully_retweeted_ids.append(tweet.tweet_id)
       print(f"Retweeted & Archived Tweet ID {tweet.tweet_id} with link to {tweet.post_url}")
     except:
       continue
-  return successfully_retweeted_urls
+  return successfully_retweeted_ids
 
 def activate_siglebot():
   """
