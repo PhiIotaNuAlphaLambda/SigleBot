@@ -12,6 +12,5 @@ def index():
 
 class RetweetedTweet(db.Model):
   id=db.Column(db.Integer, primary_key=True)
-  tweet_id=db.Column(db.Integer, unique=True, nullable=False)
+  post_url=db.Column(db.String(200), unique=True, nullable=False)
   date_retweeted=db.Column(db.DateTime, unique=False, nullable=False)
-  

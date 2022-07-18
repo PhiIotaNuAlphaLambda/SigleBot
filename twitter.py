@@ -81,42 +81,47 @@ def organize_tweets(downloaded_tweets):
     )
   return new_tweets
 
+
 def deduplicate_tweets(new_tweets_list):
   """
   Compares list up tweets against recently tweeted links stored in database, removing them from the list of tweets that are to be retweeted.
   """
-  db_tweet_ids = []
+  db_post_urls = []
   db_tweets = RetweetedTweet.query.all()
   for db_tweet in db_tweets:
-    db_tweet_ids.append(db_tweet.tweet_id)
+    db_post_urls.append(db_tweet.post_url)
+
   deduplicated_tweets = []
   for tweet in new_tweets_list:
-    if tweet.id not in db_tweet_ids:
+    if tweet.post_url not in db_post_urls:
       deduplicated_tweets.append(tweet)
   return deduplicated_tweets
 
-def log_retweeted_urls(successfully_retweeted_ids):
+
+def log_retweeted_urls(successfully_retweeted_urls):
   """
   Record tweet into the DB to ensure it doesn't get tweeted again anytime soon.
   """
-  for tweet_id in successfully_retweeted_ids:
+  for tweet_id in successfully_retweeted_urls:
     adding_tweet = RetweetedTweet(tweet_id=tweet_id, date_retweeted=datetime.now())
     db.session.add(adding_tweet)
     db.session.commit()
   
   return True
 
+
 def send_retweets(cleaned_tweets_list, tweepy_client):
-  successfully_retweeted_ids = []
+  successfully_retweeted_urls = []
   for tweet in cleaned_tweets_list:
     try:
       if config('DEBUG', cast=bool) is not True:
         tweepy_client.retweet(tweet.tweet_id)
-      successfully_retweeted_ids.append(tweet.tweet_id)
+      successfully_retweeted_urls.append(tweet.post_url)
       print(f"Retweeted & Archived Tweet ID {tweet.tweet_id} with link to {tweet.post_url}")
     except:
       continue
-  return successfully_retweeted_ids
+  return successfully_retweeted_urls
+
 
 def activate_siglebot():
   """
@@ -126,5 +131,6 @@ def activate_siglebot():
   downloaded_tweets = query_twitter(tweepy_client)
   downloaded_tweets = organize_tweets(downloaded_tweets)
   downloaded_tweets = deduplicate_tweets(downloaded_tweets)
-  send_retweets(downloaded_tweets, tweepy_client)
+  sent_urls = send_retweets(downloaded_tweets, tweepy_client)
+  log_retweeted_urls(sent_urls)
   return True
