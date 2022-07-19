@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from decouple import config
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = config('DATABASE_URL')
+app.config['SQLALCHEMY_DATABASE_URI'] = config('PY_DB_URL')
 db = SQLAlchemy(app)
 
 @app.route("/")
