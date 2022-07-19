@@ -4,3 +4,4 @@ __pycache__
 ancient_archive.txt
 recent_archive.txt
 .env
+.DS_Store
