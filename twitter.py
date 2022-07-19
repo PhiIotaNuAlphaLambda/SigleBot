@@ -3,6 +3,9 @@ import tweepy
 import re
 from app import RetweetedTweet, db
 from datetime import datetime
+import pprint
+
+pp = pprint.PrettyPrinter()
 
 class NewTweet:
   
@@ -39,11 +42,11 @@ def query_twitter(tweepy_client):
 
 
 def verify_valid_url(arr_url_objs):
-    """
-    Returns URL object where index 0 is the correct Sigle-formatted url.
-    """
-    found_url = find_sigle_url(arr_url_objs)
-    return found_url
+  """
+  Returns URL object where index 0 is the correct Sigle-formatted url.
+  """
+  found_url = find_sigle_url(arr_url_objs)
+  return found_url
 
 
 def find_sigle_url(arr):
@@ -80,31 +83,52 @@ def organize_tweets(downloaded_tweets):
     )
   return new_tweets
 
-# TODO: Deduplicate against self, so oen post_url doesn't get retweeted twice
-# in list of new tweets to retweet.
-#
-# TODO: Deduplicate against list of URLs in database.
-def deduplicate_tweets(new_tweets_list):
+
+def deduplicate_tweets(new_tweets_list, model):
   """
   Compares list up tweets against recently tweeted links stored in database, removing them from the list of tweets that are to be retweeted.
   """
-  db_post_urls = []
-  db_tweets = RetweetedTweet.query.all()
-  for db_tweet in db_tweets:
-    db_post_urls.append(db_tweet.post_url)
+  new_tweets_list = deduplicate_own_list(new_tweets_list)
 
-  deduplicated_tweets = []
-  for tweet in new_tweets_list:
-    if tweet.post_url not in db_post_urls:
-      deduplicated_tweets.append(tweet)
-  return deduplicated_tweets
+  new_tweets_list = deduplicate_in_db(new_tweets_list, model)
+  return new_tweets_list
+
+
+def deduplicate_in_db(new_tweets_list, model):
+    db_pulled_urls = []
+    db_tweets = model.query.all()
+    for db_tweet in db_tweets:
+      db_pulled_urls.append(db_tweet.post_url)
+
+    for tweet in new_tweets_list:
+      if tweet.post_url[0] in db_pulled_urls:
+        print(f"starting length {len(new_tweets_list)}")
+        new_tweets_list.remove(tweet)
+        print(f"ending length {len(new_tweets_list)}")
+
+    return new_tweets_list
+
+
+def deduplicate_own_list(new_tweets_list):
+  pp.pprint(new_tweets_list)
+  print(f"Original length {len(new_tweets_list)}")
+  local_deduplicated = []
+  while len(new_tweets_list) > 1:
+    fresh_tweet = new_tweets_list.pop(0)
+    for tweet in new_tweets_list:
+      if fresh_tweet.post_url[0] == tweet.post_url[0]:
+        new_tweets_list.remove(tweet)
+    local_deduplicated.append(fresh_tweet)
+
+  local_deduplicated.append(new_tweets_list[0])
+  print(f"Ending length {len(local_deduplicated)}")  
+  return local_deduplicated
 
 
 def log_retweeted_urls(successfully_retweeted_urls):
   """
   Record tweet into the DB to ensure it doesn't get tweeted again anytime soon.
   """
-  print(successfully_retweeted_urls)
   for post_url in successfully_retweeted_urls:
     adding_tweet = RetweetedTweet(post_url=post_url, date_retweeted=datetime.now())
     db.session.add(adding_tweet)
@@ -121,7 +145,7 @@ def send_retweets(cleaned_tweets_list, tweepy_client):
       if config('DEBUG', cast=bool) is not True:
         tweepy_client.retweet(tweet.tweet_id)
       successfully_retweeted_urls.append(tweet.post_url[0])
-      print(f"Retweeted & Archived Tweet ID {tweet.tweet_id} with link to {tweet.post_url}")
+      # print(f"Retweeted & Archived Tweet ID {tweet.tweet_id} with link to {tweet.post_url[0]}")
     except:
       continue
   return successfully_retweeted_urls
@@ -134,7 +158,7 @@ def activate_siglebot():
   tweepy_client = initialize_tweepy_client()
   downloaded_tweets = query_twitter(tweepy_client)
   downloaded_tweets = organize_tweets(downloaded_tweets)
-  downloaded_tweets = deduplicate_tweets(downloaded_tweets)
+  downloaded_tweets = deduplicate_tweets(downloaded_tweets, RetweetedTweet)
   sent_urls = send_retweets(downloaded_tweets, tweepy_client)
   log_retweeted_urls(sent_urls)
   return True
