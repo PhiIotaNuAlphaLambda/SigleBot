@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, redirect
 from flask_sqlalchemy import SQLAlchemy
 from decouple import config
 
@@ -8,7 +8,7 @@ db = SQLAlchemy(app)
 
 @app.route("/")
 def index():
-  return "Hello World!"
+  return redirect('https://app.sigle.io/stories/y384X5alCJWPsfVQpHrbk', code=302)
 
 class RetweetedTweet(db.Model):
   id=db.Column(db.Integer, primary_key=True)
