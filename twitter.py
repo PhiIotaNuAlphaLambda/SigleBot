@@ -3,9 +3,7 @@ import tweepy
 import re
 from app import RetweetedTweet, db
 from datetime import datetime, timedelta
-import pprint
 
-pp = pprint.PrettyPrinter()
 
 class NewTweet:
   
